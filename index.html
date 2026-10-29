@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PesoBudget - Android Style Budget Tracker</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN for Visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome for Android Material-style icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        android: {
+                            primary: '#6750A4',
+                            onPrimary: '#FFFFFF',
+                            primaryContainer: '#EADDFF',
+                            onPrimaryContainer: '#21005D',
+                            secondary: '#625B71',
+                            secondaryContainer: '#E8DEF8',
+                            background: '#FEF7FF',
+                            surface: '#FFFFFF',
+                            surfaceVariant: '#E7E0EC',
+                            onSurface: '#1D1B20',
+                            error: '#B3261E',
+                            success: '#146C43'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Custom scrollbar for clean android look */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+    </style>
+</head>
+<body class="h-full bg-slate-100 text-android-onSurface flex justify-center items-center p-0 sm:p-4">
+
+    <!-- Mobile Device Container (Android App Mockup Wrapper) -->
+    <div id="app-container" class="w-full sm:max-w-md h-full sm:h-[90vh] bg-android-background sm:rounded-[36px] sm:shadow-2xl flex flex-col overflow-hidden relative border-0 sm:border-8 sm:border-slate-800">
+        
+        <!-- Status Bar (Android Header Mockup) -->
+        <div class="bg-android-primary text-android-onPrimary px-6 py-2 text-xs flex justify-between items-center select-none shrink-0">
+            <span id="current-time" class="font-semibold">6:35</span>
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-signal text-[10px]"></i>
+                <i class="fa-solid fa-wifi text-[10px]"></i>
+                <i class="fa-solid fa-battery-full text-[10px]"></i>
+            </div>
+        </div>
+
+        <!-- Top App Bar -->
+        <header class="bg-android-primary text-android-onPrimary px-4 py-3 flex justify-between items-center shadow-md shrink-0">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-full bg-android-primaryContainer text-android-onPrimaryContainer flex items-center justify-center font-bold text-sm shadow-inner">
+                    ₱
+                </div>
+                <div>
+                    <h1 class="font-semibold text-lg leading-tight">PesoBudget Tracker</h1>
+                    <p class="text-xs text-purple-200">Philippine Peso (PHP)</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-1">
+                <button onclick="openExportModal()" class="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center transition" title="Export to Excel/Sheets">
+                    <i class="fa-solid fa-file-excel text-lg"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area (Scrollable Tab Container) -->
+        <main id="main-content" class="flex-1 overflow-y-auto p-4 pb-24 relative">
+            <!-- Dynamic views will be injected here -->
+        </main>
+
+        <!-- Floating Action Button (FAB) -->
+        <button id="fab-btn" onclick="openAddModal()" class="absolute bottom-20 right-6 w-14 h-14 bg-android-primaryContainer text-android-onPrimaryContainer rounded-2xl shadow-lg flex items-center justify-center hover:scale-105 transition transform active:scale-95 z-20">
+            <i class="fa-solid fa-plus text-xl"></i>
+        </button>
+
+        <!-- Bottom Navigation Bar (Material 3 Navigation Bar) -->
+        <nav class="bg-android-surface border-t border-android-surfaceVariant h-16 flex justify-around items-center px-2 shrink-0 z-10">
+            <button onclick="switchTab('summary')" id="nav-summary" class="flex flex-col items-center justify-center w-full py-1 text-android-primary transition">
+                <div class="px-5 py-0.5 rounded-full bg-android-primaryContainer mb-0.5"><i class="fa-solid fa-chart-pie text-base"></i></div>
+                <span class="text-[11px] font-medium">Summary</span>
+            </button>
+            <button onclick="switchTab('transactions')" id="nav-transactions" class="flex flex-col items-center justify-center w-full py-1 text-android-secondary hover:text-android-primary transition">
+                <div class="px-5 py-0.5 rounded-full mb-0.5"><i class="fa-solid fa-wallet text-base"></i></div>
+                <span class="text-[11px] font-medium">Cash Flow</span>
+            </button>
+            <button onclick="switchTab('savings')" id="nav-savings" class="flex flex-col items-center justify-center w-full py-1 text-android-secondary hover:text-android-primary transition">
+                <div class="px-5 py-0.5 rounded-full mb-0.5"><i class="fa-solid fa-piggy-bank text-base"></i></div>
+                <span class="text-[11px] font-medium">Savings</span>
+            </button>
+            <button onclick="switchTab('loans')" id="nav-loans" class="flex flex-col items-center justify-center w-full py-1 text-android-secondary hover:text-android-primary transition">
+                <div class="px-5 py-0.5 rounded-full mb-0.5"><i class="fa-solid fa-hand-holding-dollar text-base"></i></div>
+                <span class="text-[11px] font-medium">Loans</span>
+            </button>
+            <button onclick="switchTab('charts')" id="nav-charts" class="flex flex-col items-center justify-center w-full py-1 text-android-secondary hover:text-android-primary transition">
+                <div class="px-5 py-0.5 rounded-full mb-0.5"><i class="fa-solid fa-chart-column text-base"></i></div>
+                <span class="text-[11px] font-medium">Charts</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Universal Dialog / Modal Template -->
+    <div id="app-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div id="modal-content" class="bg-android-surface rounded-3xl w-full max-w-sm p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <!-- Modal body injected dynamically -->
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-4 py-2 rounded-full text-xs shadow-lg transition-opacity duration-300 opacity-0 pointer-events-none z-50">
+        Action successful
+    </div>
+
+    <script>
+        // --- State Management & LocalStorage ---
+        let state = {
+            activeTab: 'summary',
+            transactions: JSON.parse(localStorage.getItem('pb_transactions')) || [
+                { id: 1, title: 'Monthly Salary', amount: 35000, type: 'INCOME', category: 'Salary', date: '2026-10-01' },
+                { id: 2, title: 'Grocery Run (SaveMore)', amount: 3450, type: 'EXPENSE', category: 'Food', date: '2026-10-03' },
+                { id: 3, title: 'Electric Bill (Meralco)', amount: 2150, type: 'EXPENSE', category: 'Utilities', date: '2026-10-05' },
+                { id: 4, title: 'Freelance Design', amount: 8500, type: 'INCOME', category: 'Freelance', date: '2026-10-10' }
+            ],
+            savings: JSON.parse(localStorage.getItem('pb_savings')) || [
+                { id: 1, name: 'Emergency Fund', target: 100000, current: 45000 },
+                { id: 2, name: 'Boracay Trip 2027', target: 25000, current: 12000 }
+            ],
+            loans: JSON.parse(localStorage.getItem('pb_loans')) || [
+                { id: 1, name: 'Credit Card (BPI)', total: 15000, balance: 6500, type: 'PAYABLE' },
+                { id: 2, name: 'Lent to John', total: 3000, balance: 1500, type: 'RECEIVABLE' }
+            ]
+        };
+
+        function saveState() {
+            localStorage.setItem('pb_transactions', JSON.stringify(state.transactions));
+            localStorage.setItem('pb_savings', JSON.stringify(state.savings));
+            localStorage.setItem('pb_loans', JSON.stringify(state.loans));
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.classList.remove('opacity-0');
+            toast.classList.add('opacity-100');
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0');
+            }, 2500);
+        }
+
+        // Philippine Peso Currency Formatter
+        function formatPHP(amount) {
+            return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount);
+        }
+
+        // Update live clock simulation
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            document.getElementById('current-time').innerText = `${hours}:${minutes}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- Navigation Controller ---
+        function switchTab(tabName) {
+            state.activeTab = tabName;
+            
+            // Update Navigation Styles
+            ['summary', 'transactions', 'savings', 'loans', 'charts'].forEach(t => {
+                const navEl = document.getElementById(`nav-${t}`);
+                if (t === tabName) {
+                    navEl.className = "flex flex-col items-center justify-center w-full py-1 text-android-primary transition";
+                    navEl.querySelector('div').classList.add('bg-android-primaryContainer');
+                } else {
+                    navEl.className = "flex flex-col items-center justify-center w-full py-1 text-android-secondary hover:text-android-primary transition";
+                    navEl.querySelector('div').classList.remove('bg-android-primaryContainer');
+                }
+            });
+
+            renderContent();
+        }
+
+        // --- Render Views ---
+        function renderContent() {
+            const container = document.getElementById('main-content');
+            container.innerHTML = '';
+
+            switch(state.activeTab) {
+                case 'summary':
+                    container.innerHTML = renderSummaryView();
+                    break;
+                case 'transactions':
+                    container.innerHTML = renderTransactionsView();
+                    break;
+                case 'savings':
+                    container.innerHTML = renderSavingsView();
+                    break;
+                case 'loans':
+                    container.innerHTML = renderLoansView();
+                    break;
+                case 'charts':
+                    container.innerHTML = renderChartsView();
+                    setTimeout(initCharts, 50); // Initialize Chart.js after DOM injection
+                    break;
+            }
+        }
+
+        // 1. Summary View
+        function renderSummaryView() {
+            const totalIncome = state.transactions.filter(t => t.type === 'INCOME').reduce((acc, t) => acc + t.amount, 0);
+            const totalExpense = state.transactions.filter(t => t.type === 'EXPENSE').reduce((acc, t) => acc + t.amount, 0);
+            const netBalance = totalIncome - totalExpense;
+            const totalSavings = state.savings.reduce((acc, s) => acc + s.current, 0);
+            const totalPayables = state.loans.filter(l => l.type === 'PAYABLE').reduce((acc, l) => acc + l.balance, 0);
+
+            return `
+                <div class="space-y-4 animate-fadeIn">
+                    <!-- Net Balance Card -->
+                    <div class="bg-gradient-to-br from-purple-700 to-indigo-900 text-white rounded-3xl p-6 shadow-lg relative overflow-hidden">
+                        <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
+                        <p class="text-xs text-purple-200 font-medium uppercase tracking-wider">Net Cash Balance</p>
+                        <h2 class="text-3xl font-bold mt-1">${formatPHP(netBalance)}</h2>
+                        <div class="mt-4 pt-4 border-t border-white/15 flex justify-between text-xs">
+                            <div>
+                                <span class="text-purple-200 block">Total Income</span>
+                                <span class="font-semibold text-emerald-300">${formatPHP(totalIncome)}</span>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-purple-200 block">Total Expenses</span>
+                                <span class="font-semibold text-rose-300">${formatPHP(totalExpense)}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Metrics Grid -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                            <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-2">
+                                <i class="fa-solid fa-piggy-bank text-sm"></i>
+                            </div>
+                            <p class="text-xs text-slate-500">Savings Stashed</p>
+                            <p class="text-base font-bold text-slate-800 mt-0.5">${formatPHP(totalSavings)}</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                            <div class="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center mb-2">
+                                <i class="fa-solid fa-file-invoice-dollar text-sm"></i>
+                            </div>
+                            <p class="text-xs text-slate-500">Active Payables</p>
+                            <p class="text-base font-bold text-slate-800 mt-0.5">${formatPHP(totalPayables)}</p>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity Section -->
+                    <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="font-semibold text-sm text-slate-800">Recent Transactions</h3>
+                            <button onclick="switchTab('transactions')" class="text-xs text-android-primary font-medium">View All</button>
+                        </div>
+                        <div class="space-y-2">
+                            ${state.transactions.slice(-3).reverse().map(t => `
+                                <div class="flex justify-between items-center py-2 border-b border-slate-100 last:border-0">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-9 h-9 rounded-full ${t.type === 'INCOME' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'} flex items-center justify-center text-sm font-bold">
+                                            <i class="fa-solid ${t.type === 'INCOME' ? 'fa-arrow-down' : 'fa-arrow-up'}"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs font-semibold text-slate-800">${t.title}</p>
+                                            <p class="text-[10px] text-slate-400">${t.category} • ${t.date}</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-xs font-bold ${t.type === 'INCOME' ? 'text-emerald-600' : 'text-rose-600'}">
+                                        ${t.type === 'INCOME' ? '+' : '-'}${formatPHP(t.amount)}
+                                    </span>
+                                </div>
+                            `).join('') || '<p class="text-xs text-slate-400 text-center py-2">No transactions recorded yet.</p>'}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 2. Transactions View
+        function renderTransactionsView() {
+            return `
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <h2 class="font-bold text-slate-800 text-base">Income & Expenses</h2>
+                        <span class="text-xs bg-purple-100 text-purple-700 font-medium px-2.5 py-1 rounded-full">${state.transactions.length} records</span>
+                    </div>
+
+                    <div class="space-y-2.5">
+                        ${state.transactions.slice().reverse().map(t => `
+                            <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 rounded-2xl ${t.type === 'INCOME' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'} flex items-center justify-center text-sm">
+                                        <i class="fa-solid ${t.type === 'INCOME' ? 'fa-wallet' : 'fa-receipt'}"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xs font-bold text-slate-800">${t.title}</h4>
+                                        <p class="text-[10px] text-slate-400"><span class="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">${t.category}</span> • ${t.date}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <span class="text-xs font-bold ${t.type === 'INCOME' ? 'text-emerald-600' : 'text-slate-800'}">
+                                        ${t.type === 'INCOME' ? '+' : '-'}${formatPHP(t.amount)}
+                                    </span>
+                                    <div class="flex space-x-1">
+                                        <button onclick="openEditModal('transaction', ${t.id})" class="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center justify-center text-xs"><i class="fa-solid fa-pen"></i></button>
+                                        <button onclick="deleteItem('transaction', ${t.id})" class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 flex items-center justify-center text-xs"><i class="fa-solid fa-trash"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('') || '<div class="text-center py-12 text-slate-400 text-xs"><i class="fa-solid fa-folder-open text-3xl mb-2 text-slate-300"></i><p>No transactions yet. Click + to add.</p></div>'}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 3. Savings View
+        function renderSavingsView() {
+            return `
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <h2 class="font-bold text-slate-800 text-base">Savings Goals</h2>
+                        <span class="text-xs bg-purple-100 text-purple-700 font-medium px-2.5 py-1 rounded-full">${state.savings.length} goals</span>
+                    </div>
+
+                    <div class="space-y-3">
+                        ${state.savings.map(s => {
+                            const pct = Math.min(Math.round((s.current / s.target) * 100), 100);
+                            return `
+                                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                                    <div class="flex justify-between items-start">
+                                        <div>
+                                            <h4 class="text-xs font-bold text-slate-800">${s.name}</h4>
+                                            <p class="text-[10px] text-slate-400">Target: ${formatPHP(s.target)}</p>
+                                        </div>
+                                        <div class="flex space-x-1">
+                                            <button onclick="openEditModal('saving', ${s.id})" class="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-xs"><i class="fa-solid fa-pen"></i></button>
+                                            <button onclick="deleteItem('saving', ${s.id})" class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center text-xs"><i class="fa-solid fa-trash"></i></button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between text-[11px] font-semibold mb-1">
+                                            <span class="text-purple-700">${formatPHP(s.current)}</span>
+                                            <span class="text-slate-500">${pct}%</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                            <div class="bg-purple-600 h-full rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('') || '<div class="text-center py-12 text-slate-400 text-xs"><i class="fa-solid fa-piggy-bank text-3xl mb-2 text-slate-300"></i><p>No savings goals set yet.</p></div>'}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 4. Loans View
+        function renderLoansView() {
+            return `
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <h2 class="font-bold text-slate-800 text-base">Loan & Debt Tracker</h2>
+                        <span class="text-xs bg-purple-100 text-purple-700 font-medium px-2.5 py-1 rounded-full">${state.loans.length} active</span>
+                    </div>
+
+                    <div class="space-y-3">
+                        ${state.loans.map(l => `
+                            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-2">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex items-center space-x-2.5">
+                                        <div class="w-8 h-8 rounded-xl ${l.type === 'PAYABLE' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'} flex items-center justify-center text-xs">
+                                            <i class="fa-solid ${l.type === 'PAYABLE' ? 'fa-arrow-turn-down' : 'fa-arrow-turn-up'}"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="text-xs font-bold text-slate-800">${l.name}</h4>
+                                            <p class="text-[10px] text-slate-400">${l.type === 'PAYABLE' ? 'You Owe (Payable)' : 'Owed to You (Receivable)'}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex space-x-1">
+                                        <button onclick="openEditModal('loan', ${l.id})" class="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-xs"><i class="fa-solid fa-pen"></i></button>
+                                        <button onclick="deleteItem('loan', ${l.id})" class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center text-xs"><i class="fa-solid fa-trash"></i></button>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-end pt-2 border-t border-slate-100">
+                                    <div>
+                                        <span class="text-[10px] text-slate-400 block">Remaining Balance</span>
+                                        <span class="text-sm font-bold ${l.type === 'PAYABLE' ? 'text-rose-600' : 'text-emerald-600'}">${formatPHP(l.balance)}</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-[10px] text-slate-400 block">Total Principal</span>
+                                        <span class="text-xs font-semibold text-slate-700">${formatPHP(l.total)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('') || '<div class="text-center py-12 text-slate-400 text-xs"><i class="fa-solid fa-hand-holding-dollar text-3xl mb-2 text-slate-300"></i><p>No active loans recorded.</p></div>'}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 5. Charts View
+        function renderChartsView() {
+            return `
+                <div class="space-y-4">
+                    <h2 class="font-bold text-slate-800 text-base">Visual Analytics</h2>
+                    
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                        <h3 class="text-xs font-semibold text-slate-700 mb-3">Expenses by Category</h3>
+                        <div class="relative h-56 flex items-center justify-center">
+                            <canvas id="expensePieChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                        <h3 class="text-xs font-semibold text-slate-700 mb-3">Income vs Expense Overview</h3>
+                        <div class="relative h-48 flex items-center justify-center">
+                            <canvas id="cashflowBarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function initCharts() {
+            if (state.activeTab !== 'charts') return;
+
+            // Expense Category Breakdown
+            const expenseMap = {};
+            state.transactions.filter(t => t.type === 'EXPENSE').forEach(t => {
+                expenseMap[t.category] = (expenseMap[t.category] || 0) + t.amount;
+            });
+
+            const pieCtx = document.getElementById('expensePieChart');
+            if (pieCtx) {
+                new Chart(pieCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(expenseMap).length ? Object.keys(expenseMap) : ['No Data'],
+                        datasets: [{
+                            data: Object.keys(expenseMap).length ? Object.values(expenseMap) : [1],
+                            backgroundColor: ['#6750A4', '#B3261E', '#146C43', '#D0BCFF', '#79747E', '#F59E0B']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } }
+                    }
+                });
+            }
+
+            // Income vs Expense Bar Chart
+            const totalIncome = state.transactions.filter(t => t.type === 'INCOME').reduce((a, b) => a + b.amount, 0);
+            const totalExpense = state.transactions.filter(t => t.type === 'EXPENSE').reduce((a, b) => a + b.amount, 0);
+
+            const barCtx = document.getElementById('cashflowBarChart');
+            if (barCtx) {
+                new Chart(barCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Income', 'Expense'],
+                        datasets: [{
+                            label: 'Amount in PHP',
+                            data: [totalIncome, totalExpense],
+                            backgroundColor: ['#146C43', '#B3261E'],
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+            }
+        }
+
+        // --- CRUD Operations & Modal Controller ---
+        function openAddModal() {
+            const modal = document.getElementById('app-modal');
+            const content = document.getElementById('modal-content');
+            
+            let typeLabel = '';
+            if (state.activeTab === 'summary' || state.activeTab === 'transactions') typeLabel = 'transaction';
+            else if (state.activeTab === 'savings') typeLabel = 'saving';
+            else if (state.activeTab === 'loans') typeLabel = 'loan';
+            else typeLabel = 'transaction';
+
+            content.innerHTML = getFormHTML(typeLabel, 'Add');
+            modal.classList.remove('hidden');
+        }
+
+        function openEditModal(type, id) {
+            const modal = document.getElementById('app-modal');
+            const content = document.getElementById('modal-content');
+            
+            let item = null;
+            if (type === 'transaction') item = state.transactions.find(t => t.id === id);
+            else if (type === 'saving') item = state.savings.find(s => s.id === id);
+            else if (type === 'loan') item = state.loans.find(l => l.id === id);
+
+            if (!item) return;
+            content.innerHTML = getFormHTML(type, 'Edit', item);
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('app-modal').classList.add('hidden');
+        }
+
+        function getFormHTML(type, mode, item = null) {
+            const isEdit = mode === 'Edit';
+            const idVal = isEdit ? item.id : '';
+
+            if (type === 'transaction') {
+                return `
+                    <h3 class="font-bold text-slate-800 text-base mb-4">${mode} Transaction</h3>
+                    <form onsubmit="handleTransactionSubmit(event, ${idVal})" class="space-y-3">
+                        <div>
+                            <label class="text-[11px] font-semibold text-slate-500 block mb-1">Title / Description</label>
+                            <input type="text" id="tx-title" value="${isEdit ? item.title : ''}" required class="w-full bg-slate-100 rounded-xl px-3 py-2 text-xs border border-slate-200 focus:outline-none focus:border-purple-600">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-500 block mb-1">Amount (₱)</label>
+                                <input type="number" step="0.01" id="tx-amount" value="${isEdit ? item.amount : ''}" required class="w-full bg-slate-100 rounded-xl px-3 py-2 text-xs border border-slate-200 focus:outline-none focus:border-purple-600">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-500 block mb-1">Type</label>
+                                <select id="tx-type" class="w-full bg-slate-100 rounded-xl px-3 py-2 text-xs border border-slate-200 focus:outline-none focus:border-purple-600">
+                                    <option value="EXPENSE" ${isEdit && item.type === 'EXPENSE' ? 'selected' : ''}>Expense</option>
+                                    <option value="INCOME" ${isEdit && item.type === 'INCOME' ? 'selected' : ''}>Income</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-500 block mb-1">Category</label>
+                                <input type="text" id="tx-category" value="${isEdit ? item.category : 'General'}" required class="w-full bg-slate-100 rounded-xl px-3 py-2 text-xs border border-slate-200 focus:outline-none focus:border-purple-600">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-500 block mb-1">Date</label>
+                                <input type="date" id="tx-date" value="${isEdit ? item.date : new Date().toISOString().split('T')[0]}" required class="w-full bg-slate-100 rounded-xl px-3 py-2 text-xs border border-slate-200 focus:outline-none focus:border-purple-600">
+                            </div>
+                        </div>
+                        <div class="flex space-x-2 pt-3">
+                            <button type="button" onclick="closeModal()" class="flex-1 bg-slate-100 text-slate-700 py-2.5 rounded-xl text-xs font-semibold">Cancel</button>
+                            <button type="submit" class="flex-1 bg-android-primary text-white py-2.5 rounded-xl text-xs font-semibold shadow-md">Save</button>
+                        </div>
+                    </form>
+                `;
+            } else if (type === 'saving') {
+                return `
+                    <h3 class="font-bold text-slate-800 text-base mb-4">${mode} Savings Goal</h3>
+                    <form onsubmit="handleSavingSubmit(event, ${idVal})" class="space-y-3">
+                        <div>
+                            <label class="text-[11px] font-semibold text-slate-500 block mb-1">Goal Name</label>
+                            <input type="text" id="sv-name" value="${isEdit ? item.name : ''}" required class="w-full bg-slate-100 rounded-xl px-3 py-2 text-xs border border-slate-200 focus:outline-none focus:border-purple-600">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-500 block mb-1">Target Amount (₱)</label>
+                                <input type="number" step="0.01" id="sv-target" value="${isEdit ? item.target : ''}" required class="w-full bg-slate-100 rounded-xl px-3 py-2 text-xs border border-slate-200 focus:outline-none focus:border-purple-600">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-500 block mb-1">Current Saved (₱)</label>
+                                <input type="number" step="0.01" id="sv-current" value="${isEdit ? item.current : ''}" required class="w-full bg-slate-100 rounded-xl px-3 py-2 text-xs border border-slate-200 focus:outline-none focus:border-purple-600">
+                            </div>
+                        </div>
+                        <div class="flex space-x-2 pt-3">
+                            <button type="button" onclick="closeModal()" class="flex-1 bg-slate-100 text-slate-700 py-2.5 rounded-xl text-xs font-semibold">Cancel</button>
+                            <button type="submit" class="flex-1 bg-android-primary text-white py-2.5 rounded-xl text-xs font-semibold shadow-md">Save</button>
+                        </div>
+                    </form>
+                `;
+            } else if (type === 'loan') {
+                return `
+                    <h3 class="font-bold text-slate-800 text-base mb-4">${mode} Loan / Debt</h3>
+                    <form onsubmit="handleLoanSubmit(event, ${idVal})" class="space-y-3">
+                        <div>
+                            <label class="text-[11px] font-semibold text-slate-500 block mb-1">Lender / Borrower Name</label>
+                            <input type="text" id="ln-name" value="${isEdit ? item.name : ''}" required class="w-full bg-slate-100 rounded-xl px-3 py-2 text-xs border border-slate-200 focus:outline-none focus:border-purple-600">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-500 block mb-1">Total Principal (₱)</label>
+                                <input type="number" step="0.01" id="ln-total" value="${isEdit ? item.total : ''}" required class="w-full bg-slate-100 rounded-xl px-3 py-2 text-xs border border-slate-200 focus:outline-none focus:border-purple-600">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-500 block mb-1">Remaining Balance (₱)</label>
+                                <input type="number" step="0.01" id="ln-balance" value="${isEdit ? item.balance : ''}" required class="w-full bg-slate-100 rounded-xl px-3 py-2 text-xs border border-slate-200 focus:outline-none focus:border-purple-600">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-semibold text-slate-500 block mb-1">Loan Type</label>
+                            <select id="ln-type" class="w-full bg-slate-100 rounded-xl px-3 py-2 text-xs border border-slate-200 focus:outline-none focus:border-purple-600">
+                                <option value="PAYABLE" ${isEdit && item.type === 'PAYABLE' ? 'selected' : ''}>Payable (Money you owe)</option>
+                                <option value="RECEIVABLE" ${isEdit && item.type === 'RECEIVABLE' ? 'selected' : ''}>Receivable (Money owed to you)</option>
+                            </select>
+                        </div>
+                        <div class="flex space-x-2 pt-3">
+                            <button type="button" onclick="closeModal()" class="flex-1 bg-slate-100 text-slate-700 py-2.5 rounded-xl text-xs font-semibold">Cancel</button>
+                            <button type="submit" class="flex-1 bg-android-primary text-white py-2.5 rounded-xl text-xs font-semibold shadow-md">Save</button>
+                        </div>
+                    </form>
+                `;
+            }
+        }
+
+        function handleTransactionSubmit(e, id) {
+            e.preventDefault();
+            const title = document.getElementById('tx-title').value;
+            const amount = parseFloat(document.getElementById('tx-amount').value);
+            const type = document.getElementById('tx-type').value;
+            const category = document.getElementById('tx-category').value;
+            const date = document.getElementById('tx-date').value;
+
+            if (id) {
+                const index = state.transactions.findIndex(t => t.id === id);
+                if (index !== -1) state.transactions[index] = { id, title, amount, type, category, date };
+                showToast('Transaction updated successfully');
+            } else {
+                const newId = state.transactions.length > 0 ? Math.max(...state.transactions.map(t => t.id)) + 1 : 1;
+                state.transactions.push({ id: newId, title, amount, type, category, date });
+                showToast('Transaction added successfully');
+            }
+
+            saveState();
+            closeModal();
+            renderContent();
+        }
+
+        function handleSavingSubmit(e, id) {
+            e.preventDefault();
+            const name = document.getElementById('sv-name').value;
+            const target = parseFloat(document.getElementById('sv-target').value);
+            const current = parseFloat(document.getElementById('sv-current').value);
+
+            if (id) {
+                const index = state.savings.findIndex(s => s.id === id);
+                if (index !== -1) state.savings[index] = { id, name, target, current };
+                showToast('Savings goal updated');
+            } else {
+                const newId = state.savings.length > 0 ? Math.max(...state.savings.map(s => s.id)) + 1 : 1;
+                state.savings.push({ id: newId, name, target, current });
+                showToast('Savings goal added');
+            }
+
+            saveState();
+            closeModal();
+            renderContent();
+        }
+
+        function handleLoanSubmit(e, id) {
+            e.preventDefault();
+            const name = document.getElementById('ln-name').value;
+            const total = parseFloat(document.getElementById('ln-total').value);
+            const balance = parseFloat(document.getElementById('ln-balance').value);
+            const type = document.getElementById('ln-type').value;
+
+            if (id) {
+                const index = state.loans.findIndex(l => l.id === id);
+                if (index !== -1) state.loans[index] = { id, name, total, balance, type };
+                showToast('Loan record updated');
+            } else {
+                const newId = state.loans.length > 0 ? Math.max(...state.loans.map(l => l.id)) + 1 : 1;
+                state.loans.push({ id: newId, name, total, balance, type });
+                showToast('Loan record added');
+            }
+
+            saveState();
+            closeModal();
+            renderContent();
+        }
+
+        function deleteItem(type, id) {
+            if (!confirm("Are you sure you want to delete this item?")) return;
+
+            if (type === 'transaction') {
+                state.transactions = state.transactions.filter(t => t.id !== id);
+                showToast('Transaction deleted');
+            } else if (type === 'saving') {
+                state.savings = state.savings.filter(s => s.id !== id);
+                showToast('Savings goal deleted');
+            } else if (type === 'loan') {
+                state.loans = state.loans.filter(l => l.id !== id);
+                showToast('Loan record deleted');
+            }
+
+            saveState();
+            renderContent();
+        }
+
+        // --- Export to CSV (Excel / Google Sheets compatible) ---
+        function openExportModal() {
+            const modal = document.getElementById('app-modal');
+            const content = document.getElementById('modal-content');
+            
+            content.innerHTML = `
+                <div class="text-center space-y-3">
+                    <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto text-xl">
+                        <i class="fa-solid fa-file-excel"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-base">Export Budget Data</h3>
+                    <p class="text-xs text-slate-500">Download your transactions as a CSV file ready to import directly into Microsoft Excel or Google Sheets.</p>
+                    <div class="pt-2 space-y-2">
+                        <button onclick="downloadCSV()" class="w-full bg-emerald-600 text-white py-2.5 rounded-xl text-xs font-semibold shadow-md flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-download"></i><span>Download CSV File</span>
+                        </button>
+                        <button onclick="closeModal()" class="w-full bg-slate-100 text-slate-700 py-2.5 rounded-xl text-xs font-semibold">Cancel</button>
+                    </div>
+                </div>
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        function downloadCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,ID,Title,Amount (PHP),Type,Category,Date\n";
+            state.transactions.forEach(t => {
+                csvContent += `"${t.id}","${t.title}","${t.amount}","${t.type}","${t.category}","${t.date}"\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `peso_budget_export_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            closeModal();
+            showToast('CSV exported successfully');
+        }
+
+        // Initial Boot Render
+        renderContent();
+    </script>
+</body>
+</html>
